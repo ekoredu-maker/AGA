@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#b9c8ff">
+  <meta name="theme-color" content="#eef4ff">
   <meta name="description" content="AGA — 함께 성장하는 AI-PET PWA Companion">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/aga-icon.svg" type="image/svg+xml">
@@ -13,121 +13,147 @@
 <body>
   <main class="app">
     <header class="topbar">
-      <div>
-        <p class="eyebrow">AI Growth Animal</p>
-        <h1>AGA</h1>
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <strong>AGA</strong>
       </div>
-      <button id="installBtn" class="ghost" hidden>앱 설치</button>
+      <button id="installBtn" class="icon-btn install" hidden>설치</button>
     </header>
 
-    <section class="pet-stage" aria-label="AI-PET">
-      <div id="speech" class="speech" aria-live="polite">안녕. 나를 천천히 키워줘.</div>
+    <section class="world" aria-label="AI-PET 공간">
+      <div class="pet-stage">
+        <div id="speech" class="speech" aria-live="polite">안녕. 나를 천천히 키워줘.</div>
 
-      <div id="pet" class="pet" role="img" aria-label="파스텔 고양이형 AI-PET">
-        <div class="ear ear-left"><span></span></div>
-        <div class="ear ear-right"><span></span></div>
-        <div class="head">
-          <div class="eye eye-left"><i></i></div>
-          <div class="eye eye-right"><i></i></div>
-          <div class="cheek cheek-left"></div>
-          <div class="cheek cheek-right"></div>
-          <div class="nose"></div>
-          <div class="mouth"></div>
+        <div id="pet" class="pet" role="img" aria-label="파스텔 고양이형 AI-PET">
+          <div class="ear ear-left"><span></span></div>
+          <div class="ear ear-right"><span></span></div>
+          <div class="head">
+            <div class="eye eye-left"><i></i></div>
+            <div class="eye eye-right"><i></i></div>
+            <div class="cheek cheek-left"></div>
+            <div class="cheek cheek-right"></div>
+            <div class="nose"></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="body">
+            <div class="paw paw-left"></div>
+            <div class="paw paw-right"></div>
+          </div>
+          <div class="tail"></div>
         </div>
-        <div class="body">
-          <div class="paw paw-left"></div>
-          <div class="paw paw-right"></div>
+
+        <button id="identityBtn" class="identity" aria-label="상태 보기">
+          <strong id="petName">아가야</strong>
+          <span id="growthLabel">막 태어남</span>
+        </button>
+
+        <div id="touchFeedback" class="touch-feedback">아직 서로를 알아가는 중</div>
+      </div>
+    </section>
+
+    <div class="companion-dock" aria-label="빠른 돌봄">
+      <button id="quickCareBtn" class="dock-btn" aria-label="쓰다듬기">♡</button>
+      <button id="openSheetBtn" class="dock-main" aria-label="메뉴 열기">⌃</button>
+      <button id="quickPlayBtn" class="dock-btn" aria-label="놀아주기">✦</button>
+    </div>
+
+    <div id="sheetBackdrop" class="sheet-backdrop"></div>
+
+    <section id="bottomSheet" class="bottom-sheet" aria-label="AGA 기능 패널">
+      <div class="sheet-head">
+        <div>
+          <span class="sheet-kicker">AGA</span>
+          <strong id="sheetTitle">돌보기</strong>
         </div>
-        <div class="tail"></div>
+        <button id="closeSheetBtn" class="icon-btn" aria-label="패널 닫기">⌄</button>
       </div>
 
-      <div class="identity">
-        <strong id="petName">아가야</strong>
-        <span id="growthLabel">막 태어남</span>
+      <nav class="tabs" aria-label="기능">
+        <button data-tab="care" class="active">돌보기</button>
+        <button data-tab="teach">가르치기</button>
+        <button data-tab="memory">기억</button>
+        <button data-tab="transfer">데이터</button>
+      </nav>
+
+      <div class="sheet-scroll">
+        <section id="care" class="panel active">
+          <div class="meters">
+            <label>기분 <progress id="moodMeter" max="100" value="65"></progress></label>
+            <label>안정 <progress id="securityMeter" max="100" value="70"></progress></label>
+            <label>호기심 <progress id="curiosityMeter" max="100" value="55"></progress></label>
+            <label>친밀도 <progress id="attachmentMeter" max="100" value="20"></progress></label>
+          </div>
+
+          <div class="grid2">
+            <button id="petBtn" class="primary">쓰다듬기</button>
+            <button id="playBtn">놀아주기</button>
+          </div>
+
+          <label class="field">
+            <span>이름</span>
+            <div class="row">
+              <input id="nameInput" maxlength="12" placeholder="이름을 지어주세요">
+              <button id="nameBtn">기억해</button>
+            </div>
+          </label>
+
+          <div class="today" id="todaySummary"></div>
+          <div class="sensory-card">
+            <span>감각 기억</span>
+            <strong id="favoriteTouch">아직 없음</strong>
+            <small id="touchCount">터치 0회</small>
+          </div>
+        </section>
+
+        <section id="teach" class="panel">
+          <label class="field no-top">
+            <span>가르쳐 줄 말</span>
+            <textarea id="teachInput" rows="3" placeholder="예: 사과는 과일이야"></textarea>
+          </label>
+          <button id="teachBtn" class="primary wide">가르치기</button>
+          <div id="learnedPreview" class="list"></div>
+        </section>
+
+        <section id="memory" class="panel">
+          <div class="stats" id="stats"></div>
+          <div id="memoryList" class="list"></div>
+        </section>
+
+        <section id="transfer" class="panel">
+          <h2>내 PET 데이터</h2>
+          <p>평소 데이터는 이 기기의 브라우저 내부 IndexedDB에 저장됩니다. GitHub에는 PET 데이터가 올라가지 않습니다.</p>
+
+          <div class="data-card">
+            <div><span>저장소</span><strong>IndexedDB · aga-pet-db</strong></div>
+            <div><span>사이트</span><strong id="storageOrigin">-</strong></div>
+            <div><span>저장 보호</span><strong id="persistStatus">확인 중</strong></div>
+            <div><span>사용량</span><strong id="storageUsage">확인 중</strong></div>
+            <div><span>PET 데이터</span><strong id="petDataSize">-</strong></div>
+            <div><span>마지막 저장</span><strong id="lastSavedAt">-</strong></div>
+          </div>
+
+          <button id="persistBtn" class="primary wide">이 기기에 저장 보호 요청</button>
+          <p class="small">지원되는 브라우저에서는 저장 공간 자동 정리 위험을 줄이도록 영구 저장을 요청합니다.</p>
+
+          <h2 class="section-title">백업 · 복원</h2>
+          <div class="grid2">
+            <button id="backupBtn" class="primary">JSON 백업</button>
+            <button id="importBtn">JSON 복원</button>
+          </div>
+          <button id="restoreSnapshotBtn" class="wide subtle">직전 상태로 되돌리기</button>
+          <div id="snapshotState" class="status-note">로컬 복구 지점 확인 중</div>
+
+          <h2 class="section-title">PET Portable State</h2>
+          <button id="exportBtn" class="wide">이동용 PET 상태 내보내기</button>
+          <input id="importFile" type="file" accept=".json,application/json" hidden>
+        </section>
       </div>
 
-      <div class="meters">
-        <label>기분 <progress id="moodMeter" max="100" value="65"></progress></label>
-        <label>안정 <progress id="securityMeter" max="100" value="70"></progress></label>
-        <label>호기심 <progress id="curiosityMeter" max="100" value="55"></progress></label>
-        <label>친밀도 <progress id="attachmentMeter" max="100" value="20"></progress></label>
-      </div>
-
-      <p class="hint">PET을 톡 누르거나 천천히 쓰다듬어보세요.</p>\n      <div id="touchFeedback" class="touch-feedback">감각: 아직 서로를 알아가는 중</div>
+      <footer>
+        <span id="saveState">로컬 저장 준비</span>
+        <span>AGA v0.4</span>
+      </footer>
     </section>
-
-    <nav class="tabs" aria-label="기능">
-      <button data-tab="care" class="active">돌보기</button>
-      <button data-tab="teach">가르치기</button>
-      <button data-tab="memory">기억</button>
-      <button data-tab="transfer">데이터</button>
-    </nav>
-
-    <section id="care" class="panel active">
-      <div class="grid2">
-        <button id="petBtn" class="primary">쓰다듬기</button>
-        <button id="playBtn">놀아주기</button>
-      </div>
-      <label class="field">
-        <span>이름</span>
-        <div class="row">
-          <input id="nameInput" maxlength="12" placeholder="이름을 지어주세요">
-          <button id="nameBtn">기억해</button>
-        </div>
-      </label>
-      <div class="today" id="todaySummary"></div>\n      <div class="sensory-card">\n        <span>감각 기억</span>\n        <strong id="favoriteTouch">아직 없음</strong>\n        <small id="touchCount">터치 0회</small>\n      </div>
-    </section>
-
-    <section id="teach" class="panel">
-      <label class="field">
-        <span>가르쳐 줄 말</span>
-        <textarea id="teachInput" rows="3" placeholder="예: 사과는 과일이야"></textarea>
-      </label>
-      <button id="teachBtn" class="primary wide">가르치기</button>
-      <div id="learnedPreview" class="list"></div>
-    </section>
-
-    <section id="memory" class="panel">
-      <div class="stats" id="stats"></div>
-      <div id="memoryList" class="list"></div>
-    </section>
-
-    <section id="transfer" class="panel">
-      <h2>내 PET 데이터</h2>
-      <p>AGA의 평소 데이터는 이 기기의 브라우저 내부 IndexedDB에 저장됩니다. GitHub에는 PET 데이터가 올라가지 않습니다.</p>
-
-      <div class="data-card">
-        <div><span>저장소</span><strong>IndexedDB · aga-pet-db</strong></div>
-        <div><span>사이트</span><strong id="storageOrigin">-</strong></div>
-        <div><span>저장 보호</span><strong id="persistStatus">확인 중</strong></div>
-        <div><span>사용량</span><strong id="storageUsage">확인 중</strong></div>
-        <div><span>PET 데이터</span><strong id="petDataSize">-</strong></div>
-        <div><span>마지막 저장</span><strong id="lastSavedAt">-</strong></div>
-      </div>
-
-      <button id="persistBtn" class="primary wide">이 기기에 저장 보호 요청</button>
-      <p class="small">지원되는 브라우저에서는 저장 공간이 자동 정리되는 위험을 줄이도록 영구 저장을 요청합니다. 브라우저 정책에 따라 요청이 허용되지 않을 수도 있습니다.</p>
-
-      <h2 class="section-title">백업 · 복원</h2>
-      <div class="grid2">
-        <button id="backupBtn" class="primary">JSON 백업 저장</button>
-        <button id="importBtn">JSON 복원</button>
-      </div>
-      <button id="restoreSnapshotBtn" class="wide subtle">직전 로컬 상태로 되돌리기</button>
-      <div id="snapshotState" class="status-note">로컬 복구 지점 확인 중</div>
-
-      <h2 class="section-title">PET Portable State</h2>
-      <p>향후 Windows AI-PET과 같은 개체를 이동할 때도 동일한 JSON 규격을 사용합니다.</p>
-      <button id="exportBtn" class="wide">이동용 PET 상태 내보내기</button>
-
-      <input id="importFile" type="file" accept=".json,application/json" hidden>
-      <p class="small">현재는 서버 동기화를 사용하지 않습니다. 중요한 PET은 가끔 JSON 백업을 저장해 두는 것을 권장합니다.</p>
-    </section>
-
-    <footer>
-      <span id="saveState">로컬 저장 준비</span>
-      <span>AGA v0.3.1</span>
-    </footer>
   </main>
 
   <script src="./app.js" type="module"></script>
