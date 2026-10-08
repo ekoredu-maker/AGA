@@ -1,0 +1,156 @@
+name: Build AI-PET Embedded Python Portable
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - "windows-portable/**"
+      - ".github/workflows/build-embedded-portable.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Reconstruct AI-PET source
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          New-Item -ItemType Directory -Force -Path "buildsrc" | Out-Null
+          $parts = Get-ChildItem "windows-portable\source.b64.part*" | Sort-Object Name
+          if ($parts.Count -ne 4) { throw "Expected 4 source parts, found $($parts.Count)" }
+          $b64 = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ""
+          [IO.File]::WriteAllBytes("buildsrc\source.tar.gz", [Convert]::FromBase64String($b64))
+          tar -xzf "buildsrc\source.tar.gz" -C "buildsrc"
+          $required = @("buildsrc\main.py", "buildsrc\app\brain.py", "buildsrc\app\storage.py", "buildsrc\ui\index.html")
+          foreach ($item in $required) { if (-not (Test-Path $item)) { throw "Missing source file: $item" } }
+
+      - name: Prepare embedded Python package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = "AIPET105_PYTHON_EMBEDDED_PORTABLE"
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          New-Item -ItemType Directory -Force -Path "$root\runtime" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$root\data" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$root\logs" | Out-Null
+          Copy-Item "buildsrc\main.py" "$root\main.py"
+          Copy-Item "buildsrc\app" "$root\app" -Recurse
+          Copy-Item "buildsrc\ui" "$root\ui" -Recurse
+          Invoke-WebRequest -UseBasicParsing "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "python-embed.zip"
+          Expand-Archive "python-embed.zip" "$root\runtime" -Force
+          @("python311.zip", ".", "Lib\site-packages", "import site") | Set-Content "$root\runtime\python311._pth" -Encoding ASCII
+          New-Item -ItemType Directory -Force -Path "$root\runtime\Lib\site-packages" | Out-Null
+          Invoke-WebRequest -UseBasicParsing "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
+          & "$root\runtime\python.exe" "get-pip.py" --no-warn-script-location
+          if ($LASTEXITCODE -ne 0) { throw "pip bootstrap failed" }
+          & "$root\runtime\python.exe" -m pip install --disable-pip-version-check --no-warn-script-location --no-cache-dir "PySide6==6.7.3"
+          if ($LASTEXITCODE -ne 0) { throw "PySide6 install failed" }
+          & "$root\runtime\python.exe" -m pip install --disable-pip-version-check --no-warn-script-location --no-cache-dir "uiautomation>=2.0.20"
+          if ($LASTEXITCODE -ne 0) { Write-Warning "uiautomation install failed; continuing without desktop icon recognition." }
+          & "$root\runtime\python.exe" -c "import PySide6; from PySide6.QtWebEngineWidgets import QWebEngineView; from PySide6.QtWebChannel import QWebChannel; print('PySide6', PySide6.__version__, 'QtWebEngine OK')"
+          if ($LASTEXITCODE -ne 0) { throw "Qt WebEngine validation failed" }
+          "ready" | Set-Content "$root\runtime\.aipet_runtime_ready" -Encoding ASCII
+
+      - name: Add portable launchers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = "AIPET105_PYTHON_EMBEDDED_PORTABLE"
+          $normal = @(
+            '@echo off',
+            'setlocal',
+            'pushd "%~dp0"',
+            'if not exist "runtime\pythonw.exe" (',
+            '  echo [ERROR] Bundled Python runtime is missing.',
+            '  echo Please extract the whole ZIP before running AI-PET.',
+            '  pause',
+            '  exit /b 1',
+            ')',
+            'set PYTHONUTF8=1',
+            'start "" "runtime\pythonw.exe" "main.py"',
+            'popd'
+          )
+          $normal | Set-Content "$root\START_AI_PET.cmd" -Encoding ASCII
+          $normal | Set-Content "$root\START_DEV.cmd" -Encoding ASCII
+          @(
+            '@echo off',
+            'setlocal',
+            'pushd "%~dp0"',
+            'if not exist "runtime\pythonw.exe" ( echo [ERROR] Bundled Python runtime is missing. & pause & exit /b 1 )',
+            'set PYTHONUTF8=1',
+            'set QT_OPENGL=software',
+            'set QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu --disable-gpu-compositing',
+            'start "" "runtime\pythonw.exe" "main.py"',
+            'popd'
+          ) | Set-Content "$root\START_AI_PET_SAFE.cmd" -Encoding ASCII
+          @(
+            '@echo off',
+            'setlocal',
+            'pushd "%~dp0"',
+            'if not exist "runtime\python.exe" ( echo [ERROR] Bundled Python runtime is missing. & pause & exit /b 1 )',
+            'set PYTHONUTF8=1',
+            'echo AI-PET debug mode',
+            'echo =================',
+            '"runtime\python.exe" "main.py" 1> "logs\app_stdout.log" 2> "logs\app_stderr.log"',
+            'set EXITCODE=%ERRORLEVEL%',
+            'echo.',
+            'echo Exit code: %EXITCODE%',
+            'echo Error log: logs\app_stderr.log',
+            'type "logs\app_stderr.log"',
+            'echo.',
+            'pause',
+            'popd',
+            'exit /b %EXITCODE%'
+          ) | Set-Content "$root\START_AI_PET_DEBUG.cmd" -Encoding ASCII
+          @(
+            'AI-PET v1.0.5 - Python Embedded Portable',
+            '========================================',
+            '',
+            '실행: ZIP 전체 압축 해제 후 START_AI_PET.cmd 실행',
+            'Python 설치 불필요 / 첫 실행 인터넷 불필요',
+            '그래픽 문제: START_AI_PET_SAFE.cmd',
+            '실행 오류 확인: START_AI_PET_DEBUG.cmd',
+            'PET 데이터: data\pet.db',
+            '업데이트 전 data 폴더를 백업하면 기존 PET을 보존할 수 있습니다.',
+            '',
+            '이 배포판은 AI-PET 자체를 PyInstaller EXE로 만들지 않습니다.',
+            'ZIP에 포함된 공식 Python Embedded runtime의 pythonw.exe로 실행합니다.',
+            '기관 보안 정책에 따라 python.exe/pythonw.exe 실행 자체가 제한될 수는 있습니다.'
+          ) | Set-Content "$root\README_START_HERE.txt" -Encoding UTF8
+
+      - name: Validate portable layout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = "AIPET105_PYTHON_EMBEDDED_PORTABLE"
+          $required = @("$root\START_AI_PET.cmd", "$root\START_AI_PET_SAFE.cmd", "$root\START_AI_PET_DEBUG.cmd", "$root\runtime\python.exe", "$root\runtime\pythonw.exe", "$root\main.py", "$root\app\brain.py", "$root\app\storage.py", "$root\ui\index.html")
+          foreach ($item in $required) { if (-not (Test-Path $item)) { throw "Portable package missing: $item" } }
+          & "$root\runtime\python.exe" -m py_compile "$root\main.py" "$root\app\brain.py" "$root\app\storage.py"
+          if ($LASTEXITCODE -ne 0) { throw "Source syntax validation failed" }
+          $sizeMB = [math]::Round((Get-ChildItem $root -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 1)
+          Write-Host "Portable package size before ZIP: $sizeMB MB"
+
+      - name: Create portable ZIP
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Compress-Archive -Path "AIPET105_PYTHON_EMBEDDED_PORTABLE\*" -DestinationPath "AIPET105_PYTHON_EMBEDDED_PORTABLE.zip" -CompressionLevel Optimal -Force
+          $zip = Get-Item "AIPET105_PYTHON_EMBEDDED_PORTABLE.zip"
+          Write-Host "ZIP size: $([math]::Round($zip.Length / 1MB, 1)) MB"
+
+      - name: Upload portable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: AIPET105-Python-Embedded-Portable
+          path: AIPET105_PYTHON_EMBEDDED_PORTABLE.zip
+          if-no-files-found: error
+          retention-days: 30
