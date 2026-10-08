@@ -3,50 +3,188 @@
   "$id": "https://ekoredu-maker.github.io/AGA/shared/schema/pet-state.schema.json",
   "title": "PET Portable State v1",
   "type": "object",
-  "required": ["schema_version", "pet_id", "identity", "emotion", "growth", "memory", "concepts", "skills", "places"],
+  "required": [
+    "schema_version",
+    "pet_id",
+    "identity",
+    "emotion",
+    "growth",
+    "memory",
+    "concepts",
+    "skills",
+    "places"
+  ],
   "properties": {
-    "schema_version": { "const": "pet-portable-state/1.0" },
-    "pet_id": { "type": "string", "minLength": 1 },
-    "exported_at": { "type": "string" },
+    "schema_version": {
+      "const": "pet-portable-state/1.0"
+    },
+    "pet_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "exported_at": {
+      "type": "string"
+    },
     "identity": {
       "type": "object",
-      "required": ["name", "birth_time"],
+      "required": [
+        "name",
+        "birth_time"
+      ],
       "properties": {
-        "name": { "type": "string", "maxLength": 24 },
-        "birth_time": { "type": "string" },
-        "dna_hash": { "type": "string" }
+        "name": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "birth_time": {
+          "type": "string"
+        },
+        "dna_hash": {
+          "type": "string"
+        }
       },
       "additionalProperties": true
     },
-    "dna": { "type": "object" },
+    "dna": {
+      "type": "object"
+    },
     "emotion": {
       "type": "object",
       "properties": {
-        "valence": { "type": "number", "minimum": 0, "maximum": 1 },
-        "arousal": { "type": "number", "minimum": 0, "maximum": 1 },
-        "security": { "type": "number", "minimum": 0, "maximum": 1 },
-        "curiosity": { "type": "number", "minimum": 0, "maximum": 1 },
-        "attachment": { "type": "number", "minimum": 0, "maximum": 1 },
-        "fatigue": { "type": "number", "minimum": 0, "maximum": 1 }
+        "valence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "arousal": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "security": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "curiosity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "attachment": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "fatigue": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
       },
       "additionalProperties": true
     },
-    "personality": { "type": "object" },
+    "personality": {
+      "type": "object"
+    },
     "growth": {
       "type": "object",
       "properties": {
-        "stage": { "type": "integer", "minimum": 0 },
-        "label": { "type": "string" },
-        "active_days": { "type": "integer", "minimum": 0 }
+        "stage": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "label": {
+          "type": "string"
+        },
+        "active_days": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
       "additionalProperties": true
     },
-    "memory": { "type": "array", "items": { "type": "object" } },
-    "concepts": { "type": "array", "items": { "type": "object" } },
-    "skills": { "type": "array", "items": { "type": "object" } },
-    "places": { "type": "array", "items": { "type": "object" } },
-    "daily_activity": { "type": "object" },
-    "device": { "type": "object" }
+    "memory": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "concepts": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "places": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "daily_activity": {
+      "type": "object"
+    },
+    "device": {
+      "type": "object"
+    },
+    "sensory": {
+      "type": "object",
+      "properties": {
+        "total_touches": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_touch": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "touch": {
+          "type": "object",
+          "properties": {
+            "head": {
+              "$ref": "#/$defs/touchPreference"
+            },
+            "ears": {
+              "$ref": "#/$defs/touchPreference"
+            },
+            "body": {
+              "$ref": "#/$defs/touchPreference"
+            },
+            "tail": {
+              "$ref": "#/$defs/touchPreference"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
   },
-  "additionalProperties": true
+  "additionalProperties": true,
+  "$defs": {
+    "touchPreference": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "affinity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "additionalProperties": true
+    }
+  }
 }
