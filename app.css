@@ -86,3 +86,66 @@ footer{display:flex;justify-content:space-between;padding:13px 4px 0;font-size:9
   margin-top:7px;padding:8px 10px;border-radius:11px;
   background:#fafbfe;color:#8b8fa0;font-size:10px;line-height:1.45
 }
+
+.touch-feedback{
+  position:relative;z-index:3;display:inline-flex;align-items:center;
+  min-height:25px;margin-top:7px;padding:5px 9px;border-radius:999px;
+  background:rgba(240,243,255,.86);color:#80859d;font-size:9px
+}
+.sensory-card{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;
+  margin-top:9px;padding:10px 11px;border-radius:14px;background:#f8f9fd;
+  border:1px solid #eceef6
+}
+.sensory-card span{font-size:10px;color:#8a8fa1}
+.sensory-card strong{font-size:11px;color:#535a73;text-align:center}
+.sensory-card small{font-size:9px;color:#989caf;text-align:right}
+.pet.react-purr{animation:petPurr .68s ease-in-out}
+.pet.react-purr .eye{animation:happyEyes .68s ease-in-out}
+.pet.react-purr .tail{animation:tailSoft .7s ease-in-out}
+.pet.react-bounce{animation:petBounce .48s ease-out}
+.pet.react-bounce .tail{animation:tailWag .48s ease-in-out}
+.pet.react-startle{animation:petStartle .48s ease-out}
+.pet.react-startle .tail{animation:tailStartle .5s ease-out}
+.pet.react-nuzzle{animation:petNuzzle .8s ease-in-out}
+.pet.react-nuzzle .eye{animation:happyEyes .8s ease-in-out}
+@keyframes petPurr{
+  0%,100%{transform:translateY(0) scale(1)}
+  30%{transform:translateY(2px) scale(1.018)}
+  60%{transform:translateY(0) scale(.995)}
+}
+@keyframes petBounce{
+  0%,100%{transform:translateY(0)}
+  38%{transform:translateY(-12px) scale(1.02)}
+  68%{transform:translateY(2px) scale(.99)}
+}
+@keyframes petStartle{
+  0%,100%{transform:translate(0,0) rotate(0)}
+  25%{transform:translate(-5px,-5px) rotate(-2deg)}
+  55%{transform:translate(5px,-2px) rotate(2deg)}
+}
+@keyframes petNuzzle{
+  0%,100%{transform:rotate(0) translateX(0)}
+  35%{transform:rotate(-3deg) translateX(-4px)}
+  70%{transform:rotate(2deg) translateX(3px)}
+}
+@keyframes happyEyes{
+  0%,100%{transform:scaleY(1)}
+  45%,70%{transform:scaleY(.72)}
+}
+@keyframes tailWag{
+  0%,100%{transform:rotate(19deg)}
+  45%{transform:rotate(35deg)}
+  70%{transform:rotate(7deg)}
+}
+@keyframes tailSoft{
+  0%,100%{transform:rotate(19deg)}
+  50%{transform:rotate(26deg)}
+}
+@keyframes tailStartle{
+  0%,100%{transform:rotate(19deg)}
+  35%{transform:rotate(49deg) translateY(-5px)}
+}
+@media (prefers-reduced-motion:reduce){
+  .pet,.pet *{animation:none!important;transition:none!important}
+}
