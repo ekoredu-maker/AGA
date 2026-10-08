@@ -31,6 +31,12 @@ function defaultPet() {
 
 let petState = defaultPet();
 let installPrompt = null;
+let storageInfo = {
+  persisted: null,
+  usage: null,
+  quota: null,
+  snapshotAvailable: false
+};
 
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -55,18 +61,177 @@ async function loadPet() {
   petState.device = { ...(petState.device || {}), current: "aga-pwa", last_opened_at: nowIso() };
   touchDay();
   render();
+  await refreshStorageInfo();
 }
 
 async function savePet() {
   const db = await openDB();
+  petState.device = {
+    ...(petState.device || {}),
+    current: "aga-pwa",
+    last_saved_at: nowIso()
+  };
+
   await new Promise((resolve, reject) => {
     const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put(petState, KEY);
+    const store = tx.objectStore(STORE);
+    const previousReq = store.get(KEY);
+
+    previousReq.onsuccess = () => {
+      if (previousReq.result) {
+        store.put(previousReq.result, "backup:previous");
+      }
+      store.put(petState, KEY);
+    };
+
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error("IndexedDB transaction aborted"));
   });
+
   $("saveState").textContent = "로컬 저장됨";
+  await refreshStorageInfo();
   setTimeout(() => $("saveState").textContent = "로컬 자동저장", 1100);
+}
+
+
+function formatBytes(bytes) {
+  const n = Number(bytes);
+  if (!Number.isFinite(n) || n < 0) return "-";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
+  if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+  return `${(n / 1024 ** 3).toFixed(2)} GB`;
+}
+
+function formatLocalDate(value) {
+  if (!value) return "아직 없음";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return new Intl.DateTimeFormat("ko-KR", {
+    month:"short", day:"numeric", hour:"2-digit", minute:"2-digit"
+  }).format(d);
+}
+
+async function hasPreviousSnapshot() {
+  const db = await openDB();
+  return await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).get("backup:previous");
+    req.onsuccess = () => resolve(!!req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function refreshStorageInfo() {
+  try {
+    const storage = navigator.storage;
+    if (storage?.persisted) {
+      storageInfo.persisted = await storage.persisted();
+    } else {
+      storageInfo.persisted = null;
+    }
+
+    if (storage?.estimate) {
+      const estimate = await storage.estimate();
+      storageInfo.usage = estimate.usage ?? null;
+      storageInfo.quota = estimate.quota ?? null;
+    }
+
+    storageInfo.snapshotAvailable = await hasPreviousSnapshot();
+  } catch (err) {
+    console.warn("Storage status check failed", err);
+  }
+
+  const origin = location.origin || "이 기기";
+  const stateBytes = new Blob([JSON.stringify(petState)]).size;
+
+  if ($("storageOrigin")) $("storageOrigin").textContent = origin;
+  if ($("persistStatus")) {
+    $("persistStatus").textContent =
+      storageInfo.persisted === true ? "보호됨" :
+      storageInfo.persisted === false ? "브라우저 관리" : "지원 여부 미확인";
+  }
+  if ($("storageUsage")) {
+    $("storageUsage").textContent =
+      storageInfo.usage != null && storageInfo.quota != null
+        ? `${formatBytes(storageInfo.usage)} / ${formatBytes(storageInfo.quota)}`
+        : "브라우저가 제공하지 않음";
+  }
+  if ($("petDataSize")) $("petDataSize").textContent = formatBytes(stateBytes);
+  if ($("lastSavedAt")) $("lastSavedAt").textContent = formatLocalDate(petState.device?.last_saved_at);
+  if ($("snapshotState")) {
+    $("snapshotState").textContent = storageInfo.snapshotAvailable
+      ? "직전 저장 상태가 기기 안에 보관되어 있습니다."
+      : "아직 로컬 복구 지점이 없습니다.";
+  }
+  if ($("restoreSnapshotBtn")) {
+    $("restoreSnapshotBtn").disabled = !storageInfo.snapshotAvailable;
+  }
+}
+
+async function requestPersistentStorage() {
+  if (!navigator.storage?.persist) {
+    alert("이 브라우저는 영구 저장 요청 기능을 제공하지 않습니다.");
+    return;
+  }
+  try {
+    const granted = await navigator.storage.persist();
+    await refreshStorageInfo();
+    speak(granted
+      ? "이 기기에서 내 데이터를 더 안전하게 보관하도록 요청했어."
+      : "브라우저가 저장 보호 요청을 허용하지 않았어. JSON 백업을 가끔 저장해줘.");
+  } catch (err) {
+    console.error(err);
+    alert("저장 보호 요청 중 오류가 발생했습니다.");
+  }
+}
+
+function downloadStateFile(kind = "backup") {
+  const out = structuredClone(petState);
+  out.exported_at = nowIso();
+  out.device = {
+    ...(out.device || {}),
+    exported_from:"aga-pwa",
+    export_kind:kind,
+    exported_at:out.exported_at
+  };
+
+  const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const name = (out.identity.name || "AI-PET").replace(/[^가-힣A-Za-z0-9_-]+/g, "_");
+  const stamp = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  a.href = url;
+  a.download = kind === "transfer"
+    ? `${name}_PET_STATE.json`
+    : `${name}_AGA_BACKUP_${stamp}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+async function restorePreviousSnapshot() {
+  const db = await openDB();
+  const snapshot = await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).get("backup:previous");
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+
+  if (!snapshot) {
+    alert("복구할 직전 로컬 상태가 없습니다.");
+    return;
+  }
+
+  const ok = confirm("현재 상태를 직전 로컬 저장 상태로 되돌릴까요? 현재 상태는 다시 직전 복구 지점으로 보관됩니다.");
+  if (!ok) return;
+
+  petState = normalizeState(snapshot);
+  remember("복원", "직전 로컬 상태로 되돌렸다.", .35);
+  await savePet();
+  render();
+  speak("직전 상태로 돌아왔어.");
 }
 
 function normalizeState(input) {
@@ -224,20 +389,17 @@ function validatePortableState(data) {
 }
 
 function exportPet() {
-  const out = structuredClone(petState);
-  out.exported_at = nowIso();
-  out.device = { ...(out.device || {}), exported_from:"aga-pwa", exported_at:out.exported_at };
-  const blob = new Blob([JSON.stringify(out, null, 2)], { type:"application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const name = (out.identity.name || "AI-PET").replace(/[^가-힣A-Za-z0-9_-]+/g, "_");
-  a.href = url;
-  a.download = `${name}_PET_STATE.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadStateFile("transfer");
   remember("이동 준비", "PET Portable State를 내보냈다.", .3);
   savePet();
   speak("내 기억을 이동 파일에 담았어.");
+}
+
+function backupPet() {
+  downloadStateFile("backup");
+  remember("백업", "기기 밖 JSON 백업 파일을 만들었다.", .24);
+  savePet();
+  speak("내 기억을 백업 파일에 담았어.");
 }
 
 async function importPet(file) {
@@ -249,6 +411,7 @@ async function importPet(file) {
   remember("기기 이동", "AGA PWA로 상태를 가져왔다.", .45);
   await savePet();
   render();
+  await refreshStorageInfo();
   speak(`${petState.identity.name || "아가야"}의 기억을 이어받았어.`);
 }
 
@@ -290,6 +453,9 @@ $("teachBtn").addEventListener("click", async () => {
 });
 
 $("exportBtn").addEventListener("click", exportPet);
+$("backupBtn").addEventListener("click", backupPet);
+$("persistBtn").addEventListener("click", requestPersistentStorage);
+$("restoreSnapshotBtn").addEventListener("click", restorePreviousSnapshot);
 $("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", async (e) => {
   const file = e.target.files?.[0];
@@ -328,6 +494,8 @@ $("installBtn").addEventListener("click", async () => {
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js"));
 }
+
+refreshStorageInfo().catch(console.warn);
 
 loadPet().catch(err => {
   console.error(err);
