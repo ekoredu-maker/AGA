@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AGA Health</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:680px;margin:48px auto;padding:0 18px;color:#303547}
+    .ok{padding:20px;border-radius:18px;background:#f3f7ff;border:1px solid #dfe8ff}
+    code{word-break:break-all}
+  </style>
+</head>
+<body>
+  <div class="ok">
+    <h1>AGA host is reachable</h1>
+    <p>정적 호스트 응답은 정상입니다.</p>
+    <p>Version: <strong>0.3.1</strong></p>
+    <p>Origin: <code id="origin"></code></p>
+  </div>
+  <script>document.getElementById("origin").textContent = location.origin;</script>
+</body>
+</html>
