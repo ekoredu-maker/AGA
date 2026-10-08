@@ -57,11 +57,18 @@ async function loadPet() {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
+  const isNewPet = !value;
   if (value) petState = normalizeState(value);
   petState.device = { ...(petState.device || {}), current: "aga-pwa", last_opened_at: nowIso() };
   touchDay();
   render();
-  await refreshStorageInfo();
+
+  // A newborn PET must exist in IndexedDB immediately, even before the first touch.
+  if (isNewPet) {
+    await savePet();
+  } else {
+    await refreshStorageInfo();
+  }
 }
 
 async function savePet() {
