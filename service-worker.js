@@ -1,4 +1,4 @@
-const CACHE = "aga-v0.2.2";
+const CACHE = "aga-v0.3.0";
 const ASSETS = [
   "./",
   "./index.html",
