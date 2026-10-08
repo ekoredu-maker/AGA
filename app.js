@@ -260,6 +260,33 @@ function normalizeState(input) {
   };
 }
 
+
+function normalizeSensory(input, fallback) {
+  const base = structuredClone(fallback || defaultPet().sensory);
+  const src = input && typeof input === "object" ? input : {};
+  const touch = src.touch && typeof src.touch === "object" ? src.touch : {};
+  for (const part of ["head","ears","body","tail"]) {
+    const item = touch[part] || {};
+    base.touch[part] = {
+      count: Math.max(0, Number(item.count ?? base.touch[part].count) || 0),
+      affinity: clamp(item.affinity ?? base.touch[part].affinity)
+    };
+  }
+  base.total_touches = Math.max(0, Number(src.total_touches || 0));
+  base.last_touch = src.last_touch || null;
+  return base;
+}
+
+function favoriteTouchPart() {
+  const labels = { head:"머리", ears:"귀", body:"몸", tail:"꼬리" };
+  const touch = petState.sensory?.touch || {};
+  const entries = Object.entries(touch)
+    .map(([part, v]) => ({ part, count:Number(v?.count || 0), affinity:Number(v?.affinity || 0) }))
+    .filter(x => x.count > 0)
+    .sort((a,b) => (b.affinity + Math.min(.2,b.count*.002)) - (a.affinity + Math.min(.2,a.count*.002)));
+  return entries.length ? { ...entries[0], label:labels[entries[0].part] } : null;
+}
+
 function touchDay() {
   const key = todayKey();
   petState.daily_activity ||= {};
@@ -321,13 +348,24 @@ function render() {
   $("curiosityMeter").value = clamp(e.curiosity) * 100;
   $("attachmentMeter").value = clamp(e.attachment) * 100;
 
+  const favTouch = favoriteTouchPart();
+  if ($("favoriteTouch")) $("favoriteTouch").textContent =
+    favTouch ? `${favTouch.label} · 친숙도 ${Math.round(favTouch.affinity*100)}%` : "아직 없음";
+  if ($("touchCount")) $("touchCount").textContent =
+    `터치 ${petState.sensory?.total_touches || 0}회`;
+  if ($("touchFeedback") && petState.sensory?.last_touch) {
+    $("touchFeedback").textContent = petState.sensory.last_touch.label || "감각 기억 중";
+  }
+
   const today = petState.daily_activity[todayKey()] || {};
   $("todaySummary").textContent =
     `오늘 돌봄 ${today.care || 0} · 놀이 ${today.play || 0} · 대화 ${today.talk || 0} · 배움 ${today.learning || 0}`;
 
   const t = totals();
+  const fav = favoriteTouchPart();
   $("stats").textContent =
-    `함께한 날 ${petState.growth.active_days || 0}일 · 기억 ${petState.memory.length} · 개념 ${petState.concepts.length} · 성장 ${petState.growth.label}`;
+    `함께한 날 ${petState.growth.active_days || 0}일 · 기억 ${petState.memory.length} · 개념 ${petState.concepts.length} · 성장 ${petState.growth.label}` +
+    (fav ? ` · 좋아하는 접촉 ${fav.label}` : "");
 
   $("memoryList").innerHTML = petState.memory.slice(0, 8).map(m =>
     `<div class="memory-item"><strong>${escapeHtml(m.type)}</strong><br>${escapeHtml(m.detail || "")}</div>`
@@ -422,6 +460,171 @@ async function importPet(file) {
   speak(`${petState.identity.name || "아가야"}의 기억을 이어받았어.`);
 }
 
+
+const touchLabels = {
+  head:"머리",
+  ears:"귀",
+  body:"몸",
+  tail:"꼬리"
+};
+
+const gestureLabels = {
+  tap:"톡",
+  hold:"가만히 손 얹기",
+  gentle_stroke:"천천히 쓰다듬기",
+  brisk_stroke:"빠르게 쓰다듬기"
+};
+
+let touchSession = null;
+let reactionTimer = null;
+
+function detectTouchPart(clientX, clientY) {
+  const rect = $("pet").getBoundingClientRect();
+  const x = (clientX - rect.left) / Math.max(1, rect.width);
+  const y = (clientY - rect.top) / Math.max(1, rect.height);
+
+  if (y < .34 && (x < .34 || x > .66)) return "ears";
+  if (y < .67) return "head";
+  if (y > .58 && x > .69) return "tail";
+  return "body";
+}
+
+function classifyTouch(session, endEvent) {
+  const duration = Math.max(1, performance.now() - session.startedAt);
+  const dx = endEvent.clientX - session.startX;
+  const dy = endEvent.clientY - session.startY;
+  const displacement = Math.hypot(dx, dy);
+  const distance = Math.max(session.distance, displacement);
+  const speed = distance / duration;
+
+  let gesture = "tap";
+  if (distance < 15 && duration >= 650) gesture = "hold";
+  else if (distance >= 24 && speed < .58) gesture = "gentle_stroke";
+  else if (distance >= 24) gesture = "brisk_stroke";
+
+  let direction = "none";
+  if (distance >= 24) {
+    if (Math.abs(dx) >= Math.abs(dy)) direction = dx >= 0 ? "right" : "left";
+    else direction = dy >= 0 ? "down" : "up";
+  }
+
+  return {
+    part: session.part,
+    gesture,
+    direction,
+    duration: Math.round(duration),
+    distance: Math.round(distance),
+    speed: +speed.toFixed(3)
+  };
+}
+
+function playReaction(name) {
+  const pet = $("pet");
+  pet.classList.remove("react-purr","react-bounce","react-startle","react-nuzzle");
+  void pet.offsetWidth;
+  pet.classList.add(name);
+  clearTimeout(reactionTimer);
+  reactionTimer = setTimeout(() => {
+    pet.classList.remove("react-purr","react-bounce","react-startle","react-nuzzle");
+  }, 900);
+}
+
+function softHaptic(pattern) {
+  try {
+    if (navigator.vibrate) navigator.vibrate(pattern);
+  } catch {}
+}
+
+async function applyTouchExperience(info) {
+  const sensory = petState.sensory ||= normalizeSensory(null, defaultPet().sensory);
+  const pref = sensory.touch[info.part] ||= { count:0, affinity:.5 };
+  pref.count += 1;
+  sensory.total_touches = Number(sensory.total_touches || 0) + 1;
+
+  const gentle = info.gesture === "gentle_stroke" || info.gesture === "hold";
+  const playful = info.gesture === "brisk_stroke" || info.gesture === "tap";
+  const affinityGain = gentle ? .005 : .002;
+  pref.affinity = clamp(pref.affinity + affinityGain);
+
+  const affinityBoost = .85 + pref.affinity * .35;
+  const e = petState.emotion;
+
+  if (info.gesture === "hold") {
+    e.valence = clamp(e.valence + .026 * affinityBoost);
+    e.security = clamp(e.security + .046 * affinityBoost);
+    e.attachment = clamp(e.attachment + .025 * affinityBoost);
+    e.arousal = clamp(e.arousal - .018);
+    playReaction("react-nuzzle");
+    softHaptic(18);
+    addActivity("care");
+  } else if (info.gesture === "gentle_stroke") {
+    e.valence = clamp(e.valence + .035 * affinityBoost);
+    e.security = clamp(e.security + .034 * affinityBoost);
+    e.attachment = clamp(e.attachment + .019 * affinityBoost);
+    e.arousal = clamp(e.arousal - .008);
+    playReaction("react-purr");
+    softHaptic([12,20,12]);
+    addActivity("care");
+  } else if (info.gesture === "brisk_stroke") {
+    e.valence = clamp(e.valence + .022 * affinityBoost);
+    e.arousal = clamp(e.arousal + .042);
+    e.curiosity = clamp(e.curiosity + .018);
+    e.attachment = clamp(e.attachment + .007);
+    playReaction(info.part === "tail" ? "react-startle" : "react-bounce");
+    softHaptic(10);
+    addActivity("play");
+  } else {
+    e.valence = clamp(e.valence + .014 * affinityBoost);
+    e.arousal = clamp(e.arousal + .024);
+    e.curiosity = clamp(e.curiosity + .010);
+    e.attachment = clamp(e.attachment + .006);
+    playReaction("react-bounce");
+    softHaptic(8);
+    addActivity("care");
+  }
+
+  const partLabel = touchLabels[info.part];
+  const gestureLabel = gestureLabels[info.gesture];
+  const directionLabel = {
+    left:"왼쪽으로", right:"오른쪽으로", up:"위로", down:"아래로", none:""
+  }[info.direction];
+
+  const label = `${partLabel} · ${directionLabel ? directionLabel + " " : ""}${gestureLabel}`;
+  sensory.last_touch = { ...info, label, at:nowIso() };
+
+  const responses = {
+    hold: [
+      "가만히 있어도 따뜻해.",
+      "이렇게 손을 얹어주는 것도 좋아.",
+      "편안해… 조금 더 있어줘."
+    ],
+    gentle_stroke: [
+      "응… 천천히 쓰다듬는 거 좋아.",
+      "부드러워. 마음이 편안해져.",
+      "이 손길, 기억할래."
+    ],
+    brisk_stroke: [
+      info.part === "tail" ? "앗, 꼬리가 깜짝 놀랐어!" : "우와, 신난다!",
+      "빠르다! 놀자는 거지?",
+      "간질간질해!"
+    ],
+    tap: [
+      "응?",
+      "나 불렀어?",
+      "톡! 나 여기 있어."
+    ]
+  };
+  const list = responses[info.gesture] || ["응."];
+  speak(list[Math.floor(Math.random() * list.length)]);
+
+  if ([1,5,15,30,60,100].includes(sensory.total_touches)) {
+    remember("감각 기억", `${partLabel}을(를) ${gestureLabel} 해준 경험이 쌓였다.`, .28);
+  }
+
+  render();
+  await savePet();
+}
+
 document.querySelectorAll(".tabs button").forEach(btn => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b === btn));
@@ -472,18 +675,43 @@ $("importFile").addEventListener("change", async (e) => {
   e.target.value = "";
 });
 
-let pressStart = 0;
 $("pet").addEventListener("pointerdown", e => {
-  pressStart = performance.now();
+  touchSession = {
+    pointerId:e.pointerId,
+    startX:e.clientX,
+    startY:e.clientY,
+    lastX:e.clientX,
+    lastY:e.clientY,
+    startedAt:performance.now(),
+    distance:0,
+    part:detectTouchPart(e.clientX, e.clientY)
+  };
   $("pet").classList.add("pressed");
   e.currentTarget.setPointerCapture?.(e.pointerId);
 });
-$("pet").addEventListener("pointerup", async () => {
-  $("pet").classList.remove("pressed");
-  const duration = performance.now() - pressStart;
-  await care(duration > 550 ? "care" : "care");
+
+$("pet").addEventListener("pointermove", e => {
+  if (!touchSession || touchSession.pointerId !== e.pointerId) return;
+  touchSession.distance += Math.hypot(
+    e.clientX - touchSession.lastX,
+    e.clientY - touchSession.lastY
+  );
+  touchSession.lastX = e.clientX;
+  touchSession.lastY = e.clientY;
 });
-$("pet").addEventListener("pointercancel", () => $("pet").classList.remove("pressed"));
+
+$("pet").addEventListener("pointerup", async e => {
+  $("pet").classList.remove("pressed");
+  if (!touchSession || touchSession.pointerId !== e.pointerId) return;
+  const info = classifyTouch(touchSession, e);
+  touchSession = null;
+  await applyTouchExperience(info);
+});
+
+$("pet").addEventListener("pointercancel", () => {
+  touchSession = null;
+  $("pet").classList.remove("pressed");
+});
 
 window.addEventListener("beforeinstallprompt", e => {
   e.preventDefault();
