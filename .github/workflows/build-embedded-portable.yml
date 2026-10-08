@@ -47,7 +47,7 @@ jobs:
           Copy-Item "buildsrc\ui" "$root\ui" -Recurse
           Invoke-WebRequest -UseBasicParsing "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "python-embed.zip"
           Expand-Archive "python-embed.zip" "$root\runtime" -Force
-          @("python311.zip", ".", "Lib\site-packages", "import site") | Set-Content "$root\runtime\python311._pth" -Encoding ASCII
+          @("python311.zip", ".", "..", "Lib\site-packages", "import site") | Set-Content "$root\runtime\python311._pth" -Encoding ASCII
           New-Item -ItemType Directory -Force -Path "$root\runtime\Lib\site-packages" | Out-Null
           Invoke-WebRequest -UseBasicParsing "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
           & "$root\runtime\python.exe" "get-pip.py" --no-warn-script-location
