@@ -22,6 +22,16 @@ function defaultPet() {
     concepts: [],
     skills: [],
     places: [],
+    sensory: {
+      total_touches: 0,
+      last_touch: null,
+      touch: {
+        head: { count: 0, affinity: .62 },
+        ears: { count: 0, affinity: .54 },
+        body: { count: 0, affinity: .58 },
+        tail: { count: 0, affinity: .46 }
+      }
+    },
     daily_activity: {
       [todayKey()]: { care: 0, play: 0, talk: 0, learning: 0 }
     },
@@ -256,6 +266,7 @@ function normalizeState(input) {
     concepts: Array.isArray(input.concepts) ? input.concepts : [],
     skills: Array.isArray(input.skills) ? input.skills : [],
     places: Array.isArray(input.places) ? input.places : [],
+    sensory: normalizeSensory(input.sensory, base.sensory),
     daily_activity: input.daily_activity && typeof input.daily_activity === "object" ? input.daily_activity : {}
   };
 }
