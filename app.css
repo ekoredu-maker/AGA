@@ -64,3 +64,25 @@ input,textarea{width:100%;border:1px solid #e3e6f2;border-radius:13px;background
 .panel h2{font-size:15px;margin:0 0 6px}.panel p{font-size:12px;line-height:1.55;color:#71768a}.small{font-size:10px!important;color:#9296a9!important}
 footer{display:flex;justify-content:space-between;padding:13px 4px 0;font-size:9px;color:#9a9eb0}
 @media (max-width:380px){.pet-stage{min-height:490px}.pet{transform:scale(.92);margin-top:8px;margin-bottom:-10px}.meters{gap:6px}.tabs button{font-size:10px}}
+.data-card{
+  display:grid;gap:7px;margin:12px 0;padding:12px;
+  border:1px solid #e9ebf5;border-radius:16px;background:#f8f9fe
+}
+.data-card>div{
+  display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:start
+}
+.data-card span{font-size:10px;color:#8a8fa4}
+.data-card strong{
+  font-size:10px;font-weight:650;color:#50566d;
+  overflow-wrap:anywhere;text-align:right
+}
+.section-title{margin-top:20px!important}
+.panel .subtle{
+  margin-top:8px;background:#f7f8fc;color:#72778d;
+  border:1px solid #e8eaf3
+}
+.panel button:disabled{opacity:.45;cursor:not-allowed}
+.status-note{
+  margin-top:7px;padding:8px 10px;border-radius:11px;
+  background:#fafbfe;color:#8b8fa0;font-size:10px;line-height:1.45
+}
