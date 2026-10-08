@@ -54,14 +54,3 @@ AGA는 기존 Windows AI-PET의 핵심 개체 상태를 모바일/태블릿에�
 현재 단계: **AGA v0.3 터치 감각·반응**
 
 
-## 이중 웹 배포
-
-AGA는 GitHub Pages를 기본 소스 배포로 유지하면서, Windows 환경에서 `github.io` 접속이 불안정한 경우를 위해 Vercel 같은 별도 정적 호스팅에도 그대로 배포할 수 있습니다.
-
-- GitHub Pages: `https://ekoredu-maker.github.io/AGA/`
-- 대체 호스트: Vercel 프로젝트 연결 후 별도 `*.vercel.app` 주소 사용
-- 각 호스트는 브라우저 보안 정책상 서로 다른 IndexedDB를 사용합니다.
-- 기존 PET을 다른 호스트로 옮길 때는 **JSON 백업 → 새 주소에서 JSON 복원**을 사용합니다.
-- 한 기기에서는 가능한 한 하나의 주소를 계속 사용하는 것을 권장합니다.
-
-`vercel.json`은 PWA의 `index.html`, `service-worker.js`, manifest가 너무 오래 캐시되지 않도록 헤더를 지정합니다.
