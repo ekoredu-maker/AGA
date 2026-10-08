@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#b9c8ff">
+  <meta name="description" content="AGA — 함께 성장하는 AI-PET PWA Companion">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/aga-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./app.css">
+  <title>AGA</title>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">AI Growth Animal</p>
+        <h1>AGA</h1>
+      </div>
+      <button id="installBtn" class="ghost" hidden>앱 설치</button>
+    </header>
+
+    <section class="pet-stage" aria-label="AI-PET">
+      <div id="speech" class="speech" aria-live="polite">안녕. 나를 천천히 키워줘.</div>
+
+      <div id="pet" class="pet" role="img" aria-label="파스텔 고양이형 AI-PET">
+        <div class="ear ear-left"><span></span></div>
+        <div class="ear ear-right"><span></span></div>
+        <div class="head">
+          <div class="eye eye-left"><i></i></div>
+          <div class="eye eye-right"><i></i></div>
+          <div class="cheek cheek-left"></div>
+          <div class="cheek cheek-right"></div>
+          <div class="nose"></div>
+          <div class="mouth"></div>
+        </div>
+        <div class="body">
+          <div class="paw paw-left"></div>
+          <div class="paw paw-right"></div>
+        </div>
+        <div class="tail"></div>
+      </div>
+
+      <div class="identity">
+        <strong id="petName">아가야</strong>
+        <span id="growthLabel">막 태어남</span>
+      </div>
+
+      <div class="meters">
+        <label>기분 <progress id="moodMeter" max="100" value="65"></progress></label>
+        <label>안정 <progress id="securityMeter" max="100" value="70"></progress></label>
+        <label>호기심 <progress id="curiosityMeter" max="100" value="55"></progress></label>
+        <label>친밀도 <progress id="attachmentMeter" max="100" value="20"></progress></label>
+      </div>
+
+      <p class="hint">PET을 쓰다듬거나 톡톡 눌러보세요.</p>
+    </section>
+
+    <nav class="tabs" aria-label="기능">
+      <button data-tab="care" class="active">돌보기</button>
+      <button data-tab="teach">가르치기</button>
+      <button data-tab="memory">기억</button>
+      <button data-tab="transfer">이동</button>
+    </nav>
+
+    <section id="care" class="panel active">
+      <div class="grid2">
+        <button id="petBtn" class="primary">쓰다듬기</button>
+        <button id="playBtn">놀아주기</button>
+      </div>
+      <label class="field">
+        <span>이름</span>
+        <div class="row">
+          <input id="nameInput" maxlength="12" placeholder="이름을 지어주세요">
+          <button id="nameBtn">기억해</button>
+        </div>
+      </label>
+      <div class="today" id="todaySummary"></div>
+    </section>
+
+    <section id="teach" class="panel">
+      <label class="field">
+        <span>가르쳐 줄 말</span>
+        <textarea id="teachInput" rows="3" placeholder="예: 사과는 과일이야"></textarea>
+      </label>
+      <button id="teachBtn" class="primary wide">가르치기</button>
+      <div id="learnedPreview" class="list"></div>
+    </section>
+
+    <section id="memory" class="panel">
+      <div class="stats" id="stats"></div>
+      <div id="memoryList" class="list"></div>
+    </section>
+
+    <section id="transfer" class="panel">
+      <h2>PET Portable State</h2>
+      <p>Windows AI-PET과 AGA가 같은 개체를 이해하도록 만드는 공통 JSON 규격입니다.</p>
+      <div class="grid2">
+        <button id="exportBtn" class="primary">PET 내보내기</button>
+        <button id="importBtn">PET 가져오기</button>
+      </div>
+      <input id="importFile" type="file" accept=".json,application/json" hidden>
+      <p class="small">현재는 수동 이동 방식입니다. 호텔/기기 잠금 동기화는 다음 단계에서 추가합니다.</p>
+    </section>
+
+    <footer>
+      <span id="saveState">로컬 저장 준비</span>
+      <span>AGA v0.1</span>
+    </footer>
+  </main>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
