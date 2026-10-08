@@ -625,11 +625,49 @@ async function applyTouchExperience(info) {
   await savePet();
 }
 
+const TAB_TITLES = { care:"돌보기", teach:"가르치기", memory:"기억", transfer:"데이터" };
+
+function selectTab(tab) {
+  const target = TAB_TITLES[tab] ? tab : "care";
+  document.querySelectorAll(".tabs button").forEach(b =>
+    b.classList.toggle("active", b.dataset.tab === target)
+  );
+  document.querySelectorAll(".panel").forEach(p =>
+    p.classList.toggle("active", p.id === target)
+  );
+  if ($("sheetTitle")) $("sheetTitle").textContent = TAB_TITLES[target];
+  try { localStorage.setItem("aga:last-tab", target); } catch {}
+}
+
+function openSheet(tab) {
+  if (tab) selectTab(tab);
+  document.body.classList.add("sheet-open");
+}
+
+function closeSheet() {
+  document.body.classList.remove("sheet-open");
+}
+
+let initialTab = "care";
+try { initialTab = localStorage.getItem("aga:last-tab") || "care"; } catch {}
+selectTab(initialTab);
+
 document.querySelectorAll(".tabs button").forEach(btn => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("active", b === btn));
-    document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === btn.dataset.tab));
+    selectTab(btn.dataset.tab);
+    openSheet();
   });
+});
+
+$("openSheetBtn").addEventListener("click", () => openSheet());
+$("closeSheetBtn").addEventListener("click", closeSheet);
+$("sheetBackdrop").addEventListener("click", closeSheet);
+$("identityBtn").addEventListener("click", () => openSheet("care"));
+$("quickCareBtn").addEventListener("click", () => care("care"));
+$("quickPlayBtn").addEventListener("click", () => care("play"));
+
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeSheet();
 });
 
 $("petBtn").addEventListener("click", () => care("care"));
