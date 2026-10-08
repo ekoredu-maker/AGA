@@ -139,6 +139,25 @@ jobs:
           $sizeMB = [math]::Round((Get-ChildItem $root -Recurse -File | Measure-Object Length -Sum).Sum / 1MB, 1)
           Write-Host "Portable package size before ZIP: $sizeMB MB"
 
+      - name: Smoke test AI-PET startup
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $root = "AIPET105_PYTHON_EMBEDDED_PORTABLE"
+          $env:PYTHONUTF8 = "1"
+          $env:QT_OPENGL = "software"
+          $env:QTWEBENGINE_CHROMIUM_FLAGS = "--disable-gpu --disable-gpu-compositing"
+          $stdout = Join-Path $root "logs\ci_stdout.log"
+          $stderr = Join-Path $root "logs\ci_stderr.log"
+          $proc = Start-Process -FilePath "$root\runtime\python.exe" -ArgumentList "main.py" -WorkingDirectory $root -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
+          Start-Sleep -Seconds 8
+          if ($proc.HasExited) {
+            Write-Host "AI-PET exited during startup smoke test with code $($proc.ExitCode)"
+            if (Test-Path $stderr) { Get-Content $stderr }
+            throw "AI-PET startup smoke test failed"
+          }
+          Stop-Process -Id $proc.Id -Force
+          Write-Host "AI-PET stayed alive for 8 seconds: startup smoke test passed"
       - name: Create portable ZIP
         shell: powershell
         run: |
