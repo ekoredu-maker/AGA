@@ -1,0 +1,26 @@
+{
+  "name": "AGA — AI Growth Animal",
+  "short_name": "AGA",
+  "description": "함께 키우며 성장하는 AI-PET PWA Companion",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f6f7ff",
+  "theme_color": "#b9c8ff",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "./icons/aga-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/aga-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
