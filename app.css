@@ -1,0 +1,66 @@
+:root{
+  font-family:Inter,ui-rounded,"Pretendard","Noto Sans KR",system-ui,sans-serif;
+  color:#303547;
+  background:#f6f7ff;
+  --card:rgba(255,255,255,.9);
+  --line:rgba(92,102,145,.13);
+  --shadow:0 18px 50px rgba(83,90,135,.14);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;background:
+  radial-gradient(circle at 20% 0%,#e7f8ff 0,transparent 35%),
+  radial-gradient(circle at 95% 10%,#f7e6ff 0,transparent 35%),
+  linear-gradient(180deg,#f8fbff,#f6f3ff)}
+button,input,textarea{font:inherit}
+button{border:0;cursor:pointer}
+.app{width:min(100%,540px);margin:auto;padding:16px 14px calc(24px + env(safe-area-inset-bottom))}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.eyebrow{margin:0;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8b8fa6}
+h1{margin:1px 0 0;font-size:27px}
+.ghost{padding:9px 13px;border-radius:13px;background:#fff;box-shadow:0 8px 22px rgba(80,90,130,.12)}
+.pet-stage,.panel{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:28px}
+.pet-stage{position:relative;min-height:510px;padding:28px 18px 18px;text-align:center;overflow:hidden}
+.pet-stage:before{content:"";position:absolute;width:250px;height:250px;border-radius:50%;background:rgba(183,211,255,.2);filter:blur(8px);left:50%;top:80px;transform:translateX(-50%)}
+.speech{position:relative;z-index:4;display:inline-block;max-width:90%;padding:10px 14px;border-radius:18px 18px 18px 5px;background:#fff;box-shadow:0 8px 25px rgba(85,89,128,.12);font-size:13px}
+.pet{position:relative;width:230px;height:260px;margin:18px auto 2px;touch-action:none;user-select:none;transform-origin:center bottom;transition:transform .18s ease}
+.pet.pressed{transform:scale(.97)}
+.head{position:absolute;width:168px;height:143px;left:31px;top:45px;border-radius:47% 47% 44% 44%;background:linear-gradient(145deg,#dffcff 2%,#b9dcff 45%,#d7bff8 100%);box-shadow:inset -10px -13px 20px rgba(127,102,190,.10),inset 8px 8px 20px rgba(255,255,255,.45);z-index:3}
+.ear{position:absolute;width:64px;height:74px;top:11px;z-index:2;background:linear-gradient(145deg,#cff6ff,#c2bdf4 85%);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.ear span{position:absolute;inset:18px 13px 10px;background:linear-gradient(160deg,#e9fdff,#f5dff7);clip-path:inherit}
+.ear-left{left:28px;transform:rotate(-10deg)}.ear-right{right:28px;transform:rotate(10deg)}
+.eye{position:absolute;width:51px;height:60px;top:38px;border-radius:50%;background:radial-gradient(circle at 46% 50%,#304275 0 26%,#19213d 57%,#12182d 100%);box-shadow:inset 0 -7px 15px rgba(117,114,220,.35)}
+.eye:before{content:"";position:absolute;width:17px;height:23px;background:white;border-radius:50%;top:8px;left:9px;transform:rotate(18deg)}
+.eye i{position:absolute;width:8px;height:8px;background:#fff;border-radius:50%;right:9px;bottom:10px;box-shadow:-6px 6px 0 -2px #9cdcff}
+.eye-left{left:27px}.eye-right{right:27px}
+.cheek{position:absolute;width:31px;height:14px;background:rgba(255,159,199,.34);border-radius:50%;top:99px;filter:blur(1px)}
+.cheek-left{left:16px}.cheek-right{right:16px}
+.nose{position:absolute;width:15px;height:11px;left:76px;top:91px;border-radius:60% 60% 48% 48%;background:#9a79bd}
+.mouth{position:absolute;width:27px;height:12px;left:70px;top:101px;border-bottom:2px solid #746d8e;border-radius:0 0 50% 50%}
+.body{position:absolute;width:111px;height:112px;left:59px;top:156px;border-radius:44% 44% 33% 33%;background:linear-gradient(160deg,#c9ebff,#bebcea 70%,#c9a9e8);z-index:2}
+.paw{position:absolute;width:47px;height:41px;bottom:-3px;border-radius:50% 50% 45% 45%;background:linear-gradient(155deg,#dff7ff,#b8c2ef)}
+.paw-left{left:-7px}.paw-right{right:-7px}
+.tail{position:absolute;width:79px;height:96px;right:14px;bottom:7px;border-radius:55% 55% 60% 45%;background:linear-gradient(155deg,#d7f4ff,#b6c5f4 45%,#c9a8e9);transform:rotate(19deg);box-shadow:inset -8px -10px 15px rgba(111,90,180,.09)}
+.identity{position:relative;z-index:3;display:flex;justify-content:center;gap:8px;align-items:center;margin-top:0}
+.identity strong{font-size:18px}.identity span{font-size:11px;background:#eef1ff;padding:5px 8px;border-radius:999px;color:#747995}
+.meters{position:relative;z-index:3;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:18px;text-align:left}
+.meters label{font-size:10px;color:#74798f}
+progress{display:block;width:100%;height:8px;margin-top:4px;accent-color:#9caeff}
+.hint{font-size:11px;color:#9a9db1;margin:13px 0 0}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:12px 0}
+.tabs button{padding:10px 4px;border-radius:14px;background:rgba(255,255,255,.66);color:#70758d;font-size:12px}
+.tabs button.active{background:#343b58;color:white;box-shadow:0 7px 18px rgba(52,59,88,.20)}
+.panel{display:none;padding:16px}.panel.active{display:block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.panel button{padding:11px 12px;border-radius:13px;background:#edf0fa;color:#444b66}
+.panel .primary{background:linear-gradient(135deg,#a9c8ff,#c8b4f1);color:#26314f;font-weight:700}
+.wide{width:100%}
+.field{display:block;margin-top:14px}.field>span{display:block;font-size:11px;color:#777c91;margin:0 0 6px 3px}
+.row{display:flex;gap:7px}.row input{flex:1}
+input,textarea{width:100%;border:1px solid #e3e6f2;border-radius:13px;background:#fbfcff;padding:11px 12px;color:#353a50;outline:none;resize:vertical}
+.today,.list,.stats{margin-top:12px}
+.today,.stats{font-size:12px;color:#656a7d;background:#f7f8fd;padding:10px;border-radius:13px}
+.list{display:grid;gap:7px}
+.memory-item{padding:9px 10px;border-radius:12px;background:#f7f8fd;font-size:12px}
+.panel h2{font-size:15px;margin:0 0 6px}.panel p{font-size:12px;line-height:1.55;color:#71768a}.small{font-size:10px!important;color:#9296a9!important}
+footer{display:flex;justify-content:space-between;padding:13px 4px 0;font-size:9px;color:#9a9eb0}
+@media (max-width:380px){.pet-stage{min-height:490px}.pet{transform:scale(.92);margin-top:8px;margin-bottom:-10px}.meters{gap:6px}.tabs button{font-size:10px}}
